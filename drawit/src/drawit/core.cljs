@@ -14,11 +14,7 @@
 
 (defn draw-line
   [x2 y2]
-  (let [x1 (get-in @app-db [:start-position-x])
-        y1 (get-in @app-db [:start-position-y])]
-    ;; [:line {:x1 300 :y1 100 :x2 500 :y2 300 :fill "green"}]
-    (prn "x1: " x1 "- y1: " y1 "- x2: " x2 "- y2: " y2)
-    ))
+    [:line {:x1 (get-in @app-db [:start-position-x]) :y1 (get-in @app-db [:start-position-y]) :x2 x2 :y2 y2}])
 
 (defn draw-circle
   []
@@ -57,20 +53,13 @@
        [e]
        (prn "TEST"))}
     (list
-     [:line {:x1 300 :y1 100 :x2 500 :y2 300 :fill "green"}]
+     (draw-line 450 50)
     [:rect
-     {:width 100
-      :height 100
+     {:width 10
+      :height 10
       :fill "black"
-      :x 0
-      :y 0}]
-
-    [:rect
-     {:width 99
-      :height 99
-      :fill "white"
-      :x 0.5
-      :y 0.5
+      :x 50
+      :y 50
       :on-click
       (fn draw
         [e]
