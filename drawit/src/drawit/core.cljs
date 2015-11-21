@@ -16,8 +16,8 @@
   [x2 y2]
   (let [x1 (get-in @app-db [:start-position-x])
         y1 (get-in @app-db [:start-position-y])]
-    [:line {:x1 x1 :y1 y1 :x2 x2 :y2 y2 :fill "green"}]
-    ;; (prn "x1: " x1 "- x2: " x2)
+    ;; [:line {:x1 300 :y1 100 :x2 500 :y2 300 :fill "green"}]
+    (prn "x1: " x1 "- y1: " y1 "- x2: " x2 "- y2: " y2)
     ))
 
 (defn draw-circle
@@ -48,15 +48,23 @@
         (reset! app-db {:draw-mode "R"}))}
      "Rectangle"]
    [:svg
-    {:view-box "0 0 100 100"
-     :width 500
-     :height 500}
+    {:width 500
+     :height 500
+     :stroke "black"
+     :style {:display :block :border "black solid 1px"}
+     :on-click
+     (fn test
+       [e]
+       (prn "TEST"))}
+    (list
+     [:line {:x1 300 :y1 100 :x2 500 :y2 300 :fill "green"}]
     [:rect
      {:width 100
       :height 100
       :fill "black"
       :x 0
       :y 0}]
+
     [:rect
      {:width 99
       :height 99
@@ -77,7 +85,7 @@
             (swap! app-db update-in [:start-position-y] #(.-clientY e))
             ;; (reset! app-db (:x (:start-position 2)))
             ;; reset! value {:x :start-position} (.-clientX e))
-            (prn (:start-position-x @app-db) " " (:start-position-y @app-db))
+            ;; (prn (:start-position-x @app-db) " " (:start-position-y @app-db))
             (swap! app-db update-in [:clicked-once?] not)
             )
           (do
@@ -88,7 +96,7 @@
               "R" (prn "RRRRRRRR"))
             ;; (prn "You were here before, why did you came back?")
             (swap! app-db update-in [:clicked-once?] not)
-            )))}]]]))
+            )))}])]]))
 
 (reagent/render-component [draw-it]
                           (. js/document (getElementById "app")))
