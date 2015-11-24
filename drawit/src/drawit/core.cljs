@@ -4,7 +4,7 @@
 (enable-console-print!)
 
 ;; :draw-mode can be line("L"), circle("C") or rectangle("R")
-(def app-db (reagent/atom {:draw-mode "L" :clicked-once? false :start-position-x 0 :start-position-y 0}))
+(def app-db (reagent/atom {:draw-mode "L" :clicked-once? false :start-position-x 0 :start-position-y 0 :draw-list '()}))
 
 (println (str (:draw-mode @app-db) " " (:clicked-once? @app-db) " x:" (:start-position-x @app-db) " y:" (:start-position-y @app-db)))
 
@@ -12,22 +12,110 @@
 
 (defonce app-state (atom {:text "Draw it!"}))
 
+(def draw-list2 '([:line
+                  {:x1 300
+                   :y1 300
+                   :x2 500
+                   :y2 200}]
+                 [:line
+                  {:x1 300
+                   :y1 300
+                   :x2 500
+                   :y2 350}]
+                 [:rect
+                  {:width 20
+                   :height 20
+                   :fill "black"
+                   :x 50
+                   :y 50}]
+                  [:circle
+                   {:cx 350
+                    :cy 350
+                    :r 50
+                    :fill "red"}]))
+
 (defn draw-line
   [x2 y2]
-    [:line {:x1 (get-in @app-db [:start-position-x]) :y1 (get-in @app-db [:start-position-y]) :x2 x2 :y2 y2}])
+  (let [line [:line
+              {:x1 (get-in @app-db [:start-position-x])
+               :y1 (get-in @app-db [:start-position-y])
+               :x2 x2
+               :y2 y2}]]
+    (swap! app-db update-in [:draw-list] conj line)
+    ))
 
 (defn draw-circle
-  []
-  (prn "I'll draw a circle later on"))
+  [x2 y2]
+  (let [x1 (get-in @app-db [:start-position-x])
+        y1 (get-in @app-db [:start-position-y])
+        width (- x2 (get-in @app-db [:start-position-x]))
+        height (- y2 (get-in @app-db [:start-position-y]))
+        hypotenuseLength (Math/sqrt (+ (Math/pow width 2) (Math/pow height 2)))
+        circle [:circle
+                {:cx x1
+                 :cy y1
+                 :r hypotenuseLength
+                 :fill "red"}]]
+    (swap! app-db update-in [:draw-list] conj circle)
+    ))
 
 (defn draw-rect
-  []
-  (prn "I'll draw a rect later on"))
+  [x2 y2]
+  (let [x1 (get-in @app-db [:start-position-x])
+        y1 (get-in @app-db [:start-position-y])
+        width (- x2 (get-in @app-db [:start-position-x]))
+        height (- y2 (get-in @app-db [:start-position-y]))
+        x (min x1 x2)
+        y (min y1 y2)
+        rect [:rect
+              {:width (Math/abs width)
+               :height (Math/abs height)
+               :fill "black"
+               :x x
+               :y y}]]
+    (swap! app-db update-in [:draw-list] conj rect)
+    ))
 
 (defn draw-it []
   (let [value (reagent/atom {:draw-mode "L" :clicked-once? false :start-position-x 0 :start-position-y 0})]
-  [:center
-   [:h1 (:text @app-state)]
+  [:div
+   [:svg
+    {:width 500
+     :height 500
+     :stroke "black"
+     :style {:display :block :border "black solid 1px"}
+     :on-click
+     (fn draw
+       [e]
+        (if (= (:clicked-once? @app-db) false)
+          (do
+            ;; Set the start position of the drawing
+
+            ;; (reset! app-db {:x :start-position} (.-clientX e))
+            ;; reset! value {:x :start-position} (.-clientX e))
+            ;; (prn (:x (:start-position @app-db)))
+            (swap! app-db update-in [:start-position-x] #(.-clientX e))
+            (prn "sY: "(.-screenY e) " - cY: " (.-clientY e))
+            (prn "sX: "(.-screenX e) " - cX: " (.-clientX e))
+            (swap! app-db update-in [:start-position-y] #(.-clientY e))
+            ;; (reset! app-db (:x (:start-position 2)))
+            ;; reset! value {:x :start-position} (.-clientX e))
+            ;; (prn (:start-position-x @app-db) " " (:start-position-y @app-db))
+            (swap! app-db update-in [:clicked-once?] not)
+            )
+          (do
+            ;; draws the figure if a start position was set before
+            (case (get-in @app-db [:draw-mode])
+              "L" (draw-line (.-clientX e) (.-clientY e))
+              "C" (draw-circle (.-clientX e) (.-clientY e))
+              "R" (draw-rect (.-clientX e) (.-clientY e)))
+            ;; (prn "You were here before, why did you came back?")
+            (swap! app-db update-in [:clicked-once?] not)
+            )))}
+    (list
+    (get-in @app-db [:draw-list])
+    )]
+   ;; Buttons for changing draw-mode
    [:button
      {:on-click
       (fn change-to-line [e]
@@ -43,53 +131,15 @@
       (fn change-to-rect [e]
         (reset! app-db {:draw-mode "R"}))}
      "Rectangle"]
-   [:svg
-    {:width 500
-     :height 500
-     :stroke "black"
-     :style {:display :block :border "black solid 1px"}
-     :on-click
-     (fn test
-       [e]
-       (prn "TEST"))}
-    (list
-     (draw-line 450 50)
-    [:rect
-     {:width 10
-      :height 10
-      :fill "black"
-      :x 50
-      :y 50
-      :on-click
-      (fn draw
-        [e]
-        (if (= (:clicked-once? @app-db) false)
-          (do
-            ;; Set the start position of the drawing
-
-            ;; (reset! app-db {:x :start-position} (.-clientX e))
-            ;; reset! value {:x :start-position} (.-clientX e))
-            ;; (prn (:x (:start-position @app-db)))
-            (swap! app-db update-in [:start-position-x] #(.-clientX e))
-            (swap! app-db update-in [:start-position-y] #(.-clientY e))
-            ;; (reset! app-db (:x (:start-position 2)))
-            ;; reset! value {:x :start-position} (.-clientX e))
-            ;; (prn (:start-position-x @app-db) " " (:start-position-y @app-db))
-            (swap! app-db update-in [:clicked-once?] not)
-            )
-          (do
-            ;; draws the figure if a start position was set before
-            (case (get-in @app-db [:draw-mode])
-              "L" (draw-line (.-clientX e) (.-clientY e))
-              "C" (prn "CCCCCCCC")
-              "R" (prn "RRRRRRRR"))
-            ;; (prn "You were here before, why did you came back?")
-            (swap! app-db update-in [:clicked-once?] not)
-            )))}])]]))
+   [:button
+     {:on-click
+      (fn undo [e]
+        (when (not-empty (get-in @app-db [:draw-list]))
+          (swap! app-db update-in [:draw-list] (drop 1))))}
+     "Reset"]]))
 
 (reagent/render-component [draw-it]
                           (. js/document (getElementById "app")))
-
 
 (defn on-js-reload []
   ;; optionally touch your app-state to force rerendering depending on
