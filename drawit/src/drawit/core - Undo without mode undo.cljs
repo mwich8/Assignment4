@@ -4,9 +4,9 @@
 (enable-console-print!)
 
 ;; :draw-mode can be line("L"), circle("C") or rectangle("R")
-(def app-db (reagent/atom {:draw-mode :line :clicked-once? false :start-position-x 0 :start-position-y 0 :draw-list '()}))
+(def app-db (reagent/atom {:draw-mode "L" :clicked-once? false :start-position-x 0 :start-position-y 0 :draw-list '()}))
 
-;; (println (str (:draw-mode @app-db) " " (:clicked-once? @app-db) " x:" (:start-position-x @app-db) " y:" (:start-position-y @app-db)))
+(println (str (:draw-mode @app-db) " " (:clicked-once? @app-db) " x:" (:start-position-x @app-db) " y:" (:start-position-y @app-db)))
 
 ;; define your app data so that it doesn't get over-written on reload
 
@@ -37,19 +37,16 @@
 ;; Dummy methods #worstCodeQualityEver
 (defn line-mode
   []
-  (do
-    (if (= (key (first (get-in @app-db [:draw-list]))) :line)
-      (prn "LINE")
-      (prn "NO-LINE"))
-    :line))
+  "L"
+  )
 
 (defn circle-mode
   []
-  :circle)
+  "C")
 
 (defn rect-mode
   []
-  :rect)
+  "R")
 
 (defn draw-line
   [x2 y2]
@@ -94,7 +91,7 @@
     ))
 
 (defn draw-it []
-  (let [value (reagent/atom {:draw-mode :line :clicked-once? false :start-position-x 0 :start-position-y 0})]
+  (let [value (reagent/atom {:draw-mode "L" :clicked-once? false :start-position-x 0 :start-position-y 0})]
   [:div
    [:svg
     {:width 500
@@ -125,9 +122,9 @@
             (let [x-pos (- (.-clientX e) 10)
                   y-pos (- (.-clientY e) 10)]
             (case (get-in @app-db [:draw-mode])
-              :line (draw-line x-pos y-pos)
-              :circle (draw-circle x-pos y-pos)
-              :rect (draw-rect x-pos y-pos))
+              "L" (draw-line x-pos y-pos)
+              "C" (draw-circle x-pos y-pos)
+              "R" (draw-rect x-pos y-pos))
             ;; (prn "You were here before, why did you came back?")
             (swap! app-db update-in [:clicked-once?] not)
             ))))}
@@ -161,15 +158,10 @@
      "Rectangle"]
    [:button
      {:on-click
-      ;; checken ob mindestens 2 einräge vorhanden
       (fn undo [e]
         (when (not-empty (get-in @app-db [:draw-list]))
-          (do
-            (prn (count (get-in @app-db [:draw-list])))
-          (if (= (key (first (get-in @app-db [:draw-list]))) (get-in @app-db [:draw-mode]))
-            (swap! app-db update-in [:draw-list] rest)
-            (swap! app-db update-in [:draw-mode] #(key (first (get-in @app-db [:draw-list]))))
-          ))))}
+          (swap! app-db update-in [:draw-list] rest)
+          ))}
      "Undo"]]))
 
 (reagent/render-component [draw-it]
