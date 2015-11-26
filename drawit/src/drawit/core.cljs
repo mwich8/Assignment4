@@ -1,47 +1,15 @@
 (ns drawit.core
   (:require [reagent.core :as reagent :refer [atom]]))
 
-(enable-console-print!)
+;; (enable-console-print!)
 
-;; :draw-mode can be line("L"), circle("C") or rectangle("R")
+;; :draw-mode can be line(:line), circle(:circle) or rectangle(:rect)
 (def app-db (reagent/atom {:draw-mode :line :clicked-once? false :start-position-x 0 :start-position-y 0 :draw-list '()}))
-
-;; (println (str (:draw-mode @app-db) " " (:clicked-once? @app-db) " x:" (:start-position-x @app-db) " y:" (:start-position-y @app-db)))
-
-;; define your app data so that it doesn't get over-written on reload
-
-(defonce app-state (atom {:text "Draw it!"}))
-
-(def draw-list2 '([:line
-                  {:x1 300
-                   :y1 300
-                   :x2 500
-                   :y2 200}]
-                 [:line
-                  {:x1 300
-                   :y1 300
-                   :x2 500
-                   :y2 350}]
-                 [:rect
-                  {:width 20
-                   :height 20
-                   :fill "black"
-                   :x 50
-                   :y 50}]
-                  [:circle
-                   {:cx 350
-                    :cy 350
-                    :r 50
-                    :fill "red"}]))
 
 ;; Dummy methods #worstCodeQualityEver
 (defn line-mode
   []
-  (do
-    (if (= (key (first (get-in @app-db [:draw-list]))) :line)
-      (prn "LINE")
-      (prn "NO-LINE"))
-    :line))
+  :line)
 
 (defn circle-mode
   []
@@ -51,6 +19,7 @@
   []
   :rect)
 
+;; Methods for adding a figure to the draw-list
 (defn draw-line
   [x2 y2]
   (let [line [:line
@@ -93,6 +62,7 @@
     (swap! app-db update-in [:draw-list] conj rect)
     ))
 
+
 (defn draw-it []
   (let [value (reagent/atom {:draw-mode :line :clicked-once? false :start-position-x 0 :start-position-y 0})]
   [:div
@@ -106,35 +76,27 @@
        [e]
         (if (= (:clicked-once? @app-db) false)
           (do
-            ;; Set the start position of the drawing
-
-            ;; (reset! app-db {:x :start-position} (.-clientX e))
-            ;; reset! value {:x :start-position} (.-clientX e))
-            ;; (prn (:x (:start-position @app-db)))
+            ;; Set the start position of the drawing and negates the clicked-once? property
             (swap! app-db update-in [:start-position-x] #(- (.-clientX e) 10))
-            (prn "sY: "(.-screenY e) " - cY: " (.-clientY e))
-            (prn "sX: "(.-screenX e) " - cX: " (.-clientX e))
             (swap! app-db update-in [:start-position-y] #(- (.-clientY e) 10))
-            ;; (reset! app-db (:x (:start-position 2)))
-            ;; reset! value {:x :start-position} (.-clientX e))
-            ;; (prn (:start-position-x @app-db) " " (:start-position-y @app-db))
             (swap! app-db update-in [:clicked-once?] not)
             )
           (do
-            ;; draws the figure if a start position was set before
+            ;; Draws the figure if a start position was set before; also negates clicked-once? property
+            ;; Need to substract 10 because SVG has an offset of approx 10
             (let [x-pos (- (.-clientX e) 10)
                   y-pos (- (.-clientY e) 10)]
             (case (get-in @app-db [:draw-mode])
               :line (draw-line x-pos y-pos)
               :circle (draw-circle x-pos y-pos)
               :rect (draw-rect x-pos y-pos))
-            ;; (prn "You were here before, why did you came back?")
             (swap! app-db update-in [:clicked-once?] not)
             ))))}
+    ;; Actually the part where all elements get drawn
     (list
     (get-in @app-db [:draw-list])
     )]
-   ;; Buttons for changing draw-mode
+   ;; Buttons for changing draw-mode and undo-button
    [:button
      {:on-click
       (fn change-to-line [e]
@@ -161,22 +123,20 @@
      "Rectangle"]
    [:button
      {:on-click
-      ;; checken ob mindestens 2 einräge vorhanden
       (fn undo [e]
+        ;; Just do anything if one figure is drawn, otherwise makes no sense
         (when (not-empty (get-in @app-db [:draw-list]))
-          (do
-            (prn (count (get-in @app-db [:draw-list])))
+          ;; If the draw-mode has the same value as the last drawn figure
+          ;; the figure can be deleted, otherwise the draw-mode has to be
+          ;; set to the last drawn figure
           (if (= (key (first (get-in @app-db [:draw-list]))) (get-in @app-db [:draw-mode]))
             (swap! app-db update-in [:draw-list] rest)
             (swap! app-db update-in [:draw-mode] #(key (first (get-in @app-db [:draw-list]))))
-          ))))}
+          )))}
      "Undo"]]))
 
 (reagent/render-component [draw-it]
                           (. js/document (getElementById "app")))
 
 (defn on-js-reload []
-  ;; optionally touch your app-state to force rerendering depending on
-  ;; your application
-  ;; (swap! app-state update-in [:__figwheel_counter] inc)
 )
